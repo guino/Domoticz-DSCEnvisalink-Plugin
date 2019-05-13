@@ -84,7 +84,7 @@ evl_ResponseTypes = {
 #PARTITION UPDATES
     '510' : {'name':'Keypad LED State', 'handler':'keypad_led_change'},
     '511' : {'name':'Keypad LED Flash State', 'handler':'keypad_led_change'},
-    '650' : {'name':'Ready', 'handler':'partition_state_change', 'status':{'ready' : True, 'alpha' : 'Ready'}},
+    '650' : {'name':'Ready', 'handler':'partition_state_change', 'status':{'ready' : True, 'alpha' : 'Ready', 'alarm' : False, 'armed_stay' : False, 'armed_zero_entry_delay': False, 'armed_away' : False, 'exit_delay' : False, 'entry_delay' : False}},
     '651' : {'name':'Not Ready', 'handler':'partition_state_change', 'status':{'ready' : False, 'alpha' : 'Not Ready'}},
     '652' : {'name':'Armed', 'handler':'partition_state_change'},
     '653' : {'name':'Ready - Force Arming Enabled', 'handler':'partition_state_change', 'status':{'ready': True, 'alpha' : 'Ready - Force Arm'}},
@@ -128,28 +128,28 @@ evl_ResponseTypes = {
 }
 
 evl_Errors = {
-	'000' : {'description' : 'No Error'},
-	'001' : {'description' : 'Receive Buffer Overrun (a command is received while another is still being processed)'},
-	'002' : {'description' : 'Receive Buffer Overflow'},
-	'003' : {'description' : 'Transmit Buffer Overflow'},
-	
-	'010' : {'description' : 'Keybus Transmit Buffer Overrun'},
-	'011' : {'description' : 'Keybus Transmit Time Timeout'},
-	'012' : {'description' : 'Keybus Transmit Mode Timeout'},
-	'013' : {'description' : 'Keybus Transmit Keystring Timeout'},
-	'014' : {'description' : 'Keybus Interface Not Functioning (the TPI cannot communicate with the security system)'},
-	'015' : {'description' : 'Keybus Busy (Attempting to Disarm or Arm with user code)'},
-	'016' : {'description' : 'Keybus Busy – Lockout (The panel is currently in Keypad Lockout – too many disarm attempts)'},
-	'017' : {'description' : 'Keybus Busy – Installers Mode (Panel is in installers mode, most functions are unavailable)'},
-	'018' : {'description' : 'Keybus Busy – General Busy (The requested partition is busy)'},
-	
-	'020' : {'description' : 'API Command Syntax Error'},
-	'021' : {'description' : 'API Command Partition Error (Requested Partition is out of bounds)'},
-	'022' : {'description' : 'API Command Not Supported'},
-	'023' : {'description' : 'API System Not Armed (sent in response to a disarm command)'},
-	'024' : {'description' : 'API System Not Ready to Arm (system is either not-secure, in exit-delay, or already armed)'},
-	'025' : {'description' : 'API Command Invalid Length'},
-	'026' : {'description' : 'API User Code not Required'},
-	'027' : {'description' : 'API Invalid Characters in Command (no alpha characters are allowed except for checksum)'},
+    '000' : {'description' : 'No Error'},
+    '001' : {'description' : 'Receive Buffer Overrun (a command is received while another is still being processed)'},
+    '002' : {'description' : 'Receive Buffer Overflow'},
+    '003' : {'description' : 'Transmit Buffer Overflow'},
+
+    '010' : {'description' : 'Keybus Transmit Buffer Overrun'},
+    '011' : {'description' : 'Keybus Transmit Time Timeout'},
+    '012' : {'description' : 'Keybus Transmit Mode Timeout'},
+    '013' : {'description' : 'Keybus Transmit Keystring Timeout'},
+    '014' : {'description' : 'Keybus Interface Not Functioning (the TPI cannot communicate with the security system)'},
+    '015' : {'description' : 'Keybus Busy (Attempting to Disarm or Arm with user code)'},
+    '016' : {'description' : 'Keybus Busy – Lockout (The panel is currently in Keypad Lockout – too many disarm attempts)'},
+    '017' : {'description' : 'Keybus Busy – Installers Mode (Panel is in installers mode, most functions are unavailable)'},
+    '018' : {'description' : 'Keybus Busy – General Busy (The requested partition is busy)'},
+
+    '020' : {'description' : 'API Command Syntax Error'},
+    '021' : {'description' : 'API Command Partition Error (Requested Partition is out of bounds)'},
+    '022' : {'description' : 'API Command Not Supported'},
+    '023' : {'description' : 'API System Not Armed (sent in response to a disarm command)'},
+    '024' : {'description' : 'API System Not Ready to Arm (system is either not-secure, in exit-delay, or already armed)'},
+    '025' : {'description' : 'API Command Invalid Length'},
+    '026' : {'description' : 'API User Code not Required'},
+    '027' : {'description' : 'API Invalid Characters in Command (no alpha characters are allowed except for checksum)'},
 }
 

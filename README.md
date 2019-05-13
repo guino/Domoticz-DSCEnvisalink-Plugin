@@ -1,14 +1,15 @@
 # Domoticz-DSCEnvisalink-Plugin
-Full version of DSC Envisalink Plugin for Domoticz home automation
+Full version of DSC/Honeywell Envisalink Plugin for Domoticz home automation
 
-Controls a single DSC Alarm (PC1616) Envisalink on your network. 
+Controls a single DSC Alarm (PC1616) or Honeywell (Vista 15/20P) Envisalink on your network.
 
 ## Key Features
 
 * Creates a Contact device per zone that show Open/Closed status.  These can be changed to 'Motion' devices in the Device Edit page and they will show On/Off (recommend setting an Off Delay otherwise activity is rarely seen in the Web UI)
 * Creates an Alert per partition that shows partition state, useful if you don't want to use the Security Panel integration or you have more than one partition.
-* Creates a Contact device for each Command Output/Partition combination seen. The DSC only reports activation so an Off Delay must exist for the device to reset).
+* Creates a Contact device for each Command Output/Partition combination seen. The DSC only reports activation so an Off Delay must exist for the device to reset) [DSC ONLY]
 * Optionally creates a Security Panel device that allows arming and disarming via Domoticz.
+* Alarm Selector - Device that allows arming and disarming via Domoticz. [HONEYWELL ONLY]
 * When network connectivity is lost the Domoticz UI will optionally show the device(s) with Red banner
 
 ## Example
@@ -24,7 +25,7 @@ Python version 3.4 or higher required & Domoticz version 3.9446 or greater.
 
 To install:
 * Go in your Domoticz directory using a command line and open the plugins directory.
-* Run: ```git clone https://github.com/dnpwwo/Domoticz-DSCEnvisalink-Plugin.git```
+* Run: ```git clone https://github.com/guino/Domoticz-DSCEnvisalink-Plugin.git```
 * Restart Domoticz.
 
 In the web UI, navigate to the Hardware page.  In the hardware dropdown there will be an entry called "DSC Alarm via EnvisaLink 4".
@@ -39,6 +40,7 @@ This will create a 'Domoticz Internal' Security Panel device in the 'Devices' pa
 To use the Security Panel functionality, either select 'Security Panel' from the menu system or click the padlock icon on the Security Panel device (which will be in the 'Switches' tab)
 
 For security reasons the DSC Alarm can only be Armed or Disarmed via the Security Panel.
+For Honeywell a device is added for quick toggle of arm/disarm modes which you can add a switch protection if there are security concerns.
 
 ## Updating
 
@@ -49,9 +51,9 @@ To update:
 
 ## Configuration
 
-### DSC
+### DSC/Honeywell
 
-DSC must have an Envisalink 3 or 4 attached as an additional keypad.
+DSC/Honeywell must have an Envisalink 3 or 4 attached as an additional keypad.
 
 ### Domoticz
 
@@ -75,3 +77,4 @@ DSC must have an Envisalink 3 or 4 attached as an additional keypad.
 | 1.1.0 | Added Command Output support |
 | 2.1.7 | Added integration with Security Panel |
 | 2.1.8 | Bugfix: time synchronisation error message |
+| 3.0.0 | Added support for Honeywell Vista panels |
