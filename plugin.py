@@ -127,7 +127,7 @@ class BasePlugin:
             Domoticz.Log("Connected successfully to: "+Connection.Address+":"+Connection.Port)
             self.nextTimeSync = 0
         else:
-            Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port)
+            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port)
             for Key in Devices:
                 UpdateDevice(Key, 0, Devices[Key].sValue, 1)
 
@@ -159,7 +159,7 @@ class BasePlugin:
             # Message doesn't have valid DSC protocol checksum, so check if it matches Honeywell login
             if str(strData) == "Login:":
                 self.HWTYPE = 1
-                Domoticz.Log("Honeywell System Detected! Sending Login...")
+                Domoticz.Log("Honeywell System Detected!")
                 message = Parameters["Password"]+"\r\n"
                 self.alarmConn.Send(message)
             # If it's Honeywell hardware forward messages to its handler
@@ -171,7 +171,8 @@ class BasePlugin:
     def handle_honeywell(self, data):
         # If Login OK response
         if data == "OK":
-            Domoticz.Log("Honeywell Login OK!")
+            Domoticz.Debug("Honeywell Login OK!")
+            # Add special devices if not already done
             if (not ACIDX in Devices):
                 Domoticz.Device(Name="AC Power", Unit=ACIDX, Type=244, Subtype=73, Switchtype=0, Image=9).Create()
             if (not CHIMEIDX in Devices):
@@ -186,11 +187,11 @@ class BasePlugin:
             self.alarmConn.Send("*\r\n")
         # If Login FAILED response
         elif data == "FAILED":
-            Domoticz.Log("Honeywell Login FAILED!")
+            Domoticz.Error("Honeywell Login FAILED!")
             # Nothing to do
         # If it's a data update message
         elif data.startswith('%'):
-            Domoticz.Log("Honeywell Data message: "+data)
+            Domoticz.Debug("Honeywell Data message: "+data)
             # If it's zone timer dump
             if data.startswith('%FF'):
                 self.handle_hwzonedump(data)
@@ -205,9 +206,9 @@ class BasePlugin:
                 self.handle_hwpartupdate(data)
             # Something else we don't know about
             else:
-                Domoticz.Log("Honeywell unhandled data: "+data)
+                Domoticz.Debug("Honeywell unhandled data: "+data)
         else:
-            Domoticz.Log("Honeywell unhandled data: "+data)
+            Domoticz.Debug("Honeywell unhandled data: "+data)
 
     def handle_hwstatus(self, data):
         # Get partition for status update
@@ -283,7 +284,7 @@ class BasePlugin:
     def handle_hwpartupdate(self, data):
         for part in self.alarmState['partition']:
             status = int(data[(2+2*part):(4+2*part)])
-            Domoticz.Log("partupdate "+str(part)+" status="+str(status)+" / "+data[(2+2*part):(4+2*part)])
+            Domoticz.Debug("partupdate "+str(part)+" status="+str(status)+" / "+data[(2+2*part):(4+2*part)])
 
             # Set this to false (only set to true in status 9)
             self.alarmState['partition'][part]['status']['alarm_in_memory'] = False;
@@ -351,7 +352,7 @@ class BasePlugin:
                 timer = (0xFFFF-int(str(data[pos+2:pos+4])+str(data[pos:pos+2]), 16))*5
                 self.alarmState['zone'][zone]['last_fault'] = time()
                 self.alarmState['zone'][zone]['status']['open'] = (timer < 60)
-                Domoticz.Log("zone "+str(zone)+" timer="+str(timer)+" epoch="+str(time()))
+                Domoticz.Debug("zone "+str(zone)+" timer="+str(timer)+" epoch="+str(time()))
                 # Make sure device has initial state
                 UpdateDevice(ZONE_BASE+zone, 1 if self.alarmState['zone'][zone]['status']['open'] else 0, \
                             'Closed' if timer > 60 else 'Open', \
@@ -439,11 +440,11 @@ class BasePlugin:
         action, sep, params = Command.partition(' ')
         action = action.capitalize()
         # If Chime
-        if Unit == CHIMEIDX:
+        if Unit == CHIMEIDX and self.alarmConn.Connected():
             # Toggle it
             self.alarmConn.Send(Parameters['Mode4']+'9')
-            # Request status
-            self.alarmConn.Send('*')
+            # Update Device Status
+            UpdateDevice(Unit, 1 if Command == 'On' else 0, Command, False)
         if Unit == ARMIDX:
             # If already armed, disarm first
             if self.alarmState['partition'][1]['status']['armed_away'] or self.alarmState['partition'][1]['status']['armed_stay']:
@@ -463,7 +464,7 @@ class BasePlugin:
                 self.alarmConn.Send(Parameters['Mode4']+'7')
 
     def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
-        Domoticz.Log("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
+        Domoticz.Debug("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
     def onHeartbeat(self):
         if self.HWTYPE == 1:
@@ -473,7 +474,7 @@ class BasePlugin:
                 if (self.nextTimeSync <= 0):
                     now = datetime.now()
                     message = '{:02}{:02}{:02}{:02}{:02}'.format(now.hour, now.minute, now.month, now.day, now.year-2000)
-                    Domoticz.Log("Sending time synchronization command ('"+message+"')")
+                    Domoticz.Debug("Sending time synchronization command ('"+message+"')")
                     self.alarmConn.Send(CreateChecksum(evl_Commands['TimeSync']+message))
                     self.nextTimeSync = int(3600/self.heartbeatInterval)  # sync time hourly
                 else:
@@ -487,18 +488,18 @@ class BasePlugin:
                 self.alarmConn.Connect()
             return True
         except:
-            Domoticz.Log("Unhandled exception in onHeartbeat, forcing disconnect.")
+            Domoticz.Error("Unhandled exception in onHeartbeat, forcing disconnect.")
             self.alarmConn.Disconnect()
 
     def onDisconnect(self, Connection):
-        Domoticz.Log("Device has disconnected")
+        Domoticz.Debug("Device has disconnected")
         if Parameters["Mode5"] != "False":
             for Device in Devices:
                 UpdateDevice(Device, Devices[Device].nValue, Devices[Device].sValue, 1)
         return
 
     def onStop(self):
-        Domoticz.Log("onStop called")
+        Domoticz.Debug("onStop called")
         return True
 
     def handle_zone_state_change(self, code, data):
@@ -619,7 +620,7 @@ class BasePlugin:
                 theTime = datetime.now()
                 theTime.replace(hour=int(data[:2]),minute=int(data[2:4]),month=int(data[4:6]),day=int(data[6:8]),year=2000+int(data[8:]))
                 message = '{:02}:{:02} {:02}/{:02}/{:04}'.format(theTime.hour, theTime.minute, theTime.day, theTime.month, theTime.year)
-                Domoticz.Log("Received time synchronization ('"+message+"')")
+                Domoticz.Debug("Received time synchronization ('"+message+"')")
             except ValueError:
                 Domoticz.Error(str.format("Error processing time synchronization: '{0}'. Skipping.", data))
         else:
@@ -662,7 +663,7 @@ class BasePlugin:
         if (data == "0"):
             Domoticz.Error("Login Unsuccessful.")
         elif (data == "1"):
-            Domoticz.Log("Login Successful.")
+            Domoticz.Debug("Login Successful.")
             self.alarmConn.Send(CreateChecksum(evl_Commands['StatusReport']))
             self.alarmConn.Send(CreateChecksum(evl_Commands['TimeBroadcast']), 3)
             self.alarmConn.Send(CreateChecksum(evl_Commands['PartitionKeypress']+'1*1#'), 5)
@@ -775,5 +776,5 @@ def UpdateDevice(Unit, nValue, sValue, TimedOut):
     if (Unit in Devices):
         if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].TimedOut != TimedOut):
             Devices[Unit].Update(nValue=nValue, sValue=str(sValue), TimedOut=TimedOut)
-            Domoticz.Debug("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+            Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+") TimedOut="+str(TimedOut))
     return
