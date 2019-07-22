@@ -88,10 +88,12 @@ import Domoticz
 from dsc_envisalinkdefs import *
 from alarm_state import AlarmState
 from datetime import datetime
-from time import time
+from time import time, sleep
 import sys
 import re
 import json
+import threading
+import traceback
 
 ZONE_BASE = 0
 SECURITY_PANEL = 100
@@ -109,6 +111,7 @@ class BasePlugin:
     nextTimeSync = 0
     oustandingPings = 0
     HWTYPE=0
+    lastMsg=0
 
     def onStart(self):
         if Parameters["Mode6"] != "0":
@@ -122,6 +125,11 @@ class BasePlugin:
 
         Domoticz.Heartbeat(self.heartbeatInterval)
 
+        # Reset watchdog and start it up
+        self.lastMsg = time()
+        self.updateThread = threading.Thread(name="AlarmWatchdogThread", target=BasePlugin.handleThread, args=(self,))
+        self.updateThread.start()
+
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
             Domoticz.Log("Connected successfully to: "+Connection.Address+":"+Connection.Port)
@@ -134,6 +142,9 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         global evl_ResponseTypes
         strData = Data.decode("utf-8", "ignore").strip()
+
+        # Reset watchdog
+        self.lastMsg = time()
 
         if (ValidChecksum(strData)):
             dataoffset = 0
@@ -500,6 +511,7 @@ class BasePlugin:
 
     def onStop(self):
         Domoticz.Debug("onStop called")
+        self.alarmConn = None
         return True
 
     def handle_zone_state_change(self, code, data):
@@ -690,6 +702,24 @@ class BasePlugin:
             else:
                 UpdateDevice(4, 0, str(self.percentComplete), TimedOut)
         return
+
+    def handleThread(self):
+        chkTime = 0
+        Domoticz.Debug("WATCHDOG started.")
+        while self.alarmConn != None:
+            try:
+                sleep(1)
+                chkTime = chkTime + 1
+                if chkTime >= 10:
+                    chkTime = 0
+                    if self.lastMsg + 300 < time():
+                        self.lastMsg = time()
+                        Domoticz.Debug("WATCHDOG saw no messages in 5 minutes, reconnecting...")
+                        self.alarmConn.Disconnect()
+                        self.alarmConn.Connect()
+            except:
+                pass
+        Domoticz.Debug("WATCHDOG exited!")
 
 def ValidChecksum(message):
     checkSum = 0
